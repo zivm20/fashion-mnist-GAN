@@ -153,8 +153,8 @@ def train(D:torch.nn.Module,G:torch.nn.Module,loader_train,loader_val, D_optimiz
 
 
 			if save_checkpoints != None:
-				torch.save(D,"checkpoints/D/"+save_checkpoints+".pth")
-				torch.save(D,"checkpoints/G/"+save_checkpoints+".pth")
+				torch.save(D,"checkpoints/D/"+save_checkpoints+str(e)+".pth")
+				torch.save(D,"checkpoints/G/"+save_checkpoints+str(e)+".pth")
 
 		print("epoch time:",time.time()-start)
 
