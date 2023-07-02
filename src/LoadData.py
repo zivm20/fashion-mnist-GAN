@@ -33,7 +33,7 @@ def get_dataloader(data, transforms, batchSize, shuffle=True):
 	loader = DataLoader(ds, 
                     batch_size=batchSize,
 		            shuffle=shuffle,
-		            num_workers=4,
+		            num_workers=1,
 		            pin_memory=True if cfg.DEVICE == "cuda" else False,
                     pin_memory_device=cfg.DEVICE)
 	# return a tuple of  the dataset and the data loader
