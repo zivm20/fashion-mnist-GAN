@@ -42,7 +42,7 @@ def check_accuracy(loader,D,G):
 
 def generate_samples(G:Generator,amount=1):
 	noise = torch.randn(amount,cfg.NOISE_DIM,device=cfg.DEVICE,dtype=torch.float32)
-	G.to(device=cfg.DEVICE)
+	G = G.to(device=cfg.DEVICE)
 	G.eval()
 	with torch.no_grad():
 		return G(noise).cpu().detach().numpy().transpose(0,2,3,1)
@@ -158,7 +158,7 @@ def train(D:torch.nn.Module,G:torch.nn.Module,loader_train,loader_val, D_optimiz
 
 			if save_checkpoints != None:
 				torch.save(D,"checkpoints/D/"+save_checkpoints+str(e)+".pth")
-				torch.save(D,"checkpoints/G/"+save_checkpoints+str(e)+".pth")
+				torch.save(G,"checkpoints/G/"+save_checkpoints+str(e)+".pth")
 
 		print("epoch time:",time.time()-start)
 
