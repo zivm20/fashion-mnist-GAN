@@ -42,13 +42,14 @@ def check_accuracy(loader,D,G):
 
 def generate_samples(G:Generator,amount=1):
 	noise = torch.randn(amount,cfg.NOISE_DIM,device=cfg.DEVICE,dtype=torch.float32)
+	G.to(device=cfg.DEVICE)
 	G.eval()
 	with torch.no_grad():
 		return G(noise).cpu().detach().numpy().transpose(0,2,3,1)
     
 
 
-def train(D:torch.nn.Module,G:torch.nn.Module,loader_train,loader_val, D_optimizer:torch.optim,G_optimizer:torch.optim,D_lossFunction=cfg.D_LOSS_FUNCTION,G_lossFunction=cfg.G_LOSS_FUNCTION, verbose = 0,save_checkpoints=None,eval_every=10,saveSamples=2):
+def train(D:torch.nn.Module,G:torch.nn.Module,loader_train,loader_val, D_optimizer:torch.optim,G_optimizer:torch.optim,D_lossFunction=cfg.D_LOSS_FUNCTION,G_lossFunction=cfg.G_LOSS_FUNCTION, verbose = 0,save_checkpoints=None,eval_every=10,saveSamples=2,G_train_rate=cfg.G_TRAIN_RATE):
 	
 	G_hist = {"train_loss":[],"train_accuracy":[],"val_accuracy":[]}
 	D_hist = {"train_loss":[],"train_accuracy":[],"val_accuracy":[]}
@@ -91,31 +92,33 @@ def train(D:torch.nn.Module,G:torch.nn.Module,loader_train,loader_val, D_optimiz
 
 			#full loss for D
 			D_loss = (D_loss_fake+D_loss_real)
-			D_hist["train_loss"].append(D_loss.item())
+			D_loos_value = D_loss.item()
+			
 			D_loss.backward()
 			
 			# finally update D
 			D_optimizer.step()
+			#D.eval()
+			if i%G_train_rate:
+				real_label = torch.ones(y.size(dim=0)).to(device=cfg.DEVICE,dtype=torch.long)
+				
+				
+				#compute loss of G
+				G_optimizer.zero_grad()
+				
+				#create a fake sample
+				fake2 = G(noise)
+				D_scores3 = D(fake2)
+				#G succeeds when it fools D 
+				G_loss = G_lossFunction(D_scores3,real_label)
+				
+				#save paramaters
+				G_hist["train_loss"].append(G_loss.item())
+				D_hist["train_loss"].append(D_loos_value)
+				G_loss.backward()
 
-			
-			real_label = torch.ones(y.size(dim=0)).to(device=cfg.DEVICE,dtype=torch.long)
-			
-			
-			#compute loss of G
-			G_optimizer.zero_grad()
-			
-			#create a fake sample
-			fake2 = G(noise)
-			D_scores3 = D(fake2)
-			#G succeeds when it fools D 
-			G_loss = G_lossFunction(D_scores3,real_label)
-			
-			#save paramaters
-			G_hist["train_loss"].append(G_loss.item())
-			G_loss.backward()
-
-			#finally update G
-			G_optimizer.step()
+				#finally update G
+				G_optimizer.step()
 
 		
 
@@ -142,6 +145,7 @@ def train(D:torch.nn.Module,G:torch.nn.Module,loader_train,loader_val, D_optimiz
 				print('D train accuracy: %.2f%%, G train accuracy: (%.2f)%%' % (100 * train_acc_D,100*train_acc_G))
 				print('D val accuracy: %.2f%%, G val accuracy: (%.2f)%%' % (100 * val_acc_D,100*val_acc_G))
 			if verbose > 2 and saveSamples>0:
+				print("D lr:",cfg.D_LEARNING_RATE,"G_lr",cfg.G_LEARNING_RATE)
 				img_hist.append(generate_samples(G,saveSamples**2))
 				fig, axes = plt.subplots(saveSamples, saveSamples)
 				fig.set_size_inches(3*saveSamples,3*saveSamples)
